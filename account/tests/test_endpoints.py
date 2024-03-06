@@ -2,6 +2,8 @@ from account.models import CustomUser
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.urls import reverse
+
+
 class LoginViewTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
