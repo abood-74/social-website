@@ -1,9 +1,11 @@
 asgiref==3.7.2
 Django==4.1.13
+django-extensions==3.2.3
 djangorestframework==3.14.0
 exceptiongroup==1.2.0
 iniconfig==2.0.0
 packaging==23.2
+Pillow==9.2.0
 pluggy==1.4.0
 psycopg2-binary==2.9.9
 pytest==8.0.2
