@@ -1,8 +1,16 @@
 from rest_framework import serializers
+from django.contrib.auth.hashers import make_password
 from .models import CustomUser
-class LoginSerializer(serializers.Serializer):
+class LoginSerializer(serializers.ModelSerializer):
     username = serializers.CharField()
     password = serializers.CharField()
+    
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
     
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -25,6 +33,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data.pop('password2')
+        validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
 
 class EditUserSerializer(serializers.ModelSerializer):
@@ -39,6 +48,18 @@ class EditUserSerializer(serializers.ModelSerializer):
             'password': {'write_only': True, 'required': False}
             
         }
+    
+    def update(self, instance, validated_data):
+        if 'password' in validated_data:
+            validated_data['password'] = make_password(validated_data['password'])
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        if 'password' in validated_data:
+            validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+    
+
 
 class UserSerializer(serializers.ModelSerializer):
     
@@ -50,4 +71,15 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name': {'required': True},
             'username': {'required': True}
         }
+    
+    def create(self, validated_data):
+        
+        if 'password' in validated_data:
+            validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        if 'password' in validated_data:
+            validated_data['password'] = make_password(validated_data['password'])
+        return super().update(instance, validated_data)
     

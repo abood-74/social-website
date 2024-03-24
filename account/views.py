@@ -3,23 +3,26 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.password_validation import validate_password
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer
-from .models import CustomUser
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+#local imports
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer
+
 class RegisterView(APIView):
         
         def post(self, request):
             serializer = RegisterSerializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
-                print(user)
                 return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
             
             
             return Response(serializer.errors, status= status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
-
+    authentication_classes = []
+    permission_classes = []
+    
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -28,8 +31,8 @@ class LoginView(APIView):
                 password=serializer.validated_data['password']
             )
             if user:
-                login(request, user)
-                return Response({'message': 'You have been logged in'}, status= status.HTTP_200_OK)
+                refresh = RefreshToken.for_user(user)
+                return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status= status.HTTP_200_OK)
             return Response({'message': 'Invalid credentials'}, status= status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -22,7 +22,7 @@ class LoginViewTests(APITestCase):
         response = self.client.post(reverse("account:login"), data)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['message'], 'You have been logged in')
+        
 
     def test_login_with_invalid_credentials(self):
         data = {
@@ -132,3 +132,6 @@ class EditUserViewTests(APITestCase):
         
         self.assertEqual(put_response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(patch_response.status_code, status.HTTP_201_CREATED)
+        
+
+
