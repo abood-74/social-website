@@ -9,6 +9,7 @@ app_name = 'account'
 urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
     path('login/', views.LoginView.as_view(), name='login'),
+    path('google/', views.GoogleLoginView.as_view(), name='google-login'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('blacklist/', TokenBlacklistView.as_view(), name='blocklist'),
     path('password-change/', views.PasswordChangeView.as_view(), name='password-change'),

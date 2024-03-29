@@ -1,13 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 #local imports
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer
-
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer
+from .services import create_jwt_token_for_google_authnticated_user
 class RegisterView(APIView):
         
         def post(self, request):
@@ -39,14 +39,7 @@ class LoginView(APIView):
             
         
 
-class LogoutView(APIView):
-    
-    def get(self, request):
-        if request.user.is_authenticated:
-            logout(request)
-            return Response({'message': 'You have been logged out'}, status = status.HTTP_200_OK)
-        
-        return Response({'message': 'You are not logged in'}, status= status.HTTP_400_BAD_REQUEST)
+
     
 
 
@@ -98,4 +91,20 @@ class DashBoardView(APIView):
     def get(self, request):
         if request.user.is_authenticated:
             return Response({'message': f'Welcome to "{request.user.username}" the dashboard'})
+        
+        
+
+class GoogleLoginView(APIView):
+    
+    def get(self, request, *args, **kwargs):
+        
+        Auth_data = AuthSerializer(data=request.GET)
+        Auth_data.is_valid(raise_exception=True)
+        
+        validated_data = Auth_data.validated_data
+        
+        refresh, access_token = create_jwt_token_for_google_authnticated_user(validated_data)
+        
+        return Response({'refresh': str(refresh), 'access': str(access_token)}, status=status.HTTP_200_OK)
+            
         
