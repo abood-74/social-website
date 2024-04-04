@@ -14,5 +14,8 @@ urlpatterns = [
     path('blacklist/', TokenBlacklistView.as_view(), name='blocklist'),
     path('password-change/', views.PasswordChangeView.as_view(), name='password-change'),
     path('edit/', views.UserEditView.as_view(), name='edit'),
+    path('users/', views.UserListView.as_view(), name='users'),
+    path('users/detail/', views.UserDetailView.as_view(), name='user-detail'),
+    path('users/follow/', views.UserFollowView.as_view(), name='follow'),
     path('dashboard/', views.DashBoardView.as_view(), name='dashboard'),
 ]

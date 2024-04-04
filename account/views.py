@@ -5,8 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.pagination import LimitOffsetPagination
 #local imports
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer
+from .models import CustomUser, Contact
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer, UserFollowSerializer,UserDashboardSerializer
 from .services import create_jwt_token_for_google_authnticated_user
 class RegisterView(APIView):
         
@@ -83,14 +85,62 @@ class UserEditView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-        
 
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = LimitOffsetPagination
+    
+    def get(self, request):
+        qs = CustomUser.objects.all()
+        paginator = self.pagination_class()
+        users = paginator.paginate_queryset(qs, request)
+        return Response(UserSerializer(users, many=True).data, status=status.HTTP_200_OK) 
+
+class UserDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            id = request.user.id
+            user = CustomUser.objects.get(id=id)
+            return Response(UserDashboardSerializer(user).data, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+    def delete(self, request, id):
+        try:
+            user = CustomUser.objects.get(id=id)
+            user.delete()
+            return Response({'message': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+class UserFollowView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = UserFollowSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                id = serializer.validated_data['id']
+                action = serializer.validated_data['action']
+                user = CustomUser.objects.get(id=id)
+                if action == 'follow':
+                    Contact.objects.get_or_create(user_from=request.user, user_to=user)
+                else:
+                    Contact.objects.filter(user_from=request.user, user_to=user).delete()
+                return Response({'message': 'Action successful'}, status=status.HTTP_200_OK)
+            except CustomUser.DoesNotExist:
+                return Response({'message': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+   
 class DashBoardView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        if request.user.is_authenticated:
-            return Response({'message': f'Welcome to "{request.user.username}" the dashboard'})
+        return Response({'message': f'Welcome to "{request.user.username}" the dashboard'})
         
         
 

@@ -133,5 +133,94 @@ class EditUserViewTests(APITestCase):
         self.assertEqual(put_response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(patch_response.status_code, status.HTTP_201_CREATED)
         
+        
+
+class UserListViewTests(APITestCase):
+    
+    def setUp(self):
+        self.client = APIClient()
+    
+    def test_user_list_view(self):
+        user = CustomUser.objects.create_user(username='testuser', password='testpassword', email = 'a.ex.com')
+        self.client.force_authenticate(user=user)
+        
+        response = self.client.get(reverse("account:users"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert response.data[0]['username'] == 'testuser'
+        assert response.data[0]['email'] == 'a.ex.com'
+
+class UserDetailViewTests(APITestCase):
+    
+    def setUp(self):
+        self.client = APIClient()
+    
+    def test_user_detail_view(self):
+        user = CustomUser.objects.create_user(username='testuser', password='testpassword', email = 'a.ex.com')
+        self.client.force_authenticate(user=user)
+        
+        response = self.client.get(reverse("account:user-detail"))
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['username'] == 'testuser'
+        assert response.data['email'] == 'a.ex.com'
+        assert response.data['first_name'] == ''
+        assert response.data['following'] == []
+        
+        
+
+class FollowUserViewTests(APITestCase):
+    
+    def setUp(self):
+        self.client = APIClient()
+    
+    def test_follow_user_with_valid_data(self):
+        user = CustomUser.objects.create_user(username='testuser', password='testpassword', email = 'a.e.com')
+        user2 = CustomUser.objects.create_user(username='testuser2', password='testpassword', email = 'a.ex.com')
+        self.client.force_authenticate(user=user)
+        
+        data = {
+            'id': user2.id,
+            'action': 'follow'
+        }
+        
+        response = self.client.post(reverse("account:follow"), data)
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert user.following.count() == 1
+        assert user.following.first().username == 'testuser2'
+        
+        
+        
+    def test_follow_user_with_invalid_data(self):
+        user = CustomUser.objects.create_user(username='testuser', password='testpassword', email = 'a.e.com')
+        user2 = CustomUser.objects.create_user(username='testuser2', password='testpassword', email = 'a.ex.com')
+        
+        self.client.force_authenticate(user=user)
+
+        data = {
+            'id': user2.id,
+            'action': 'unfollow'
+        }
+        
+        response = self.client.post(reverse("account:follow"), data)
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert user.following.count() == 0
+        
+    def test_follow_user_with_invalid_action(self):
+        user2 = CustomUser.objects.create_user(username='testuser2', password='testpassword', email = 'a.ex.com')
+        
+        self.client.force_authenticate(user=user2)
+
+        data = {
+            'id': user2.id,
+            'action': 'invalid'
+        }
+        
+        response = self.client.post(reverse("account:follow"), data)
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'message' in response.data
+        
 
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from .models import CustomUser
+from .models import CustomUser, Contact
 class LoginSerializer(serializers.ModelSerializer):
     username = serializers.CharField()
     password = serializers.CharField()
@@ -86,3 +86,27 @@ class UserSerializer(serializers.ModelSerializer):
 class AuthSerializer(serializers.Serializer):
     code = serializers.CharField(required=False)
     error = serializers.CharField(required=False)
+
+class UserFollowSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    action = serializers.CharField()
+    
+    def validate(self, data):
+        if data['action'] not in ['follow', 'unfollow']:
+            raise serializers.ValidationError({'message': 'Invalid action'})
+        
+        return super().validate(data)
+    
+
+class UserDashboardSerializer(serializers.ModelSerializer):
+    following = UserSerializer(many=True)
+    followers = UserSerializer(many=True)
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'first_name', 'last_name', 'following', 'followers']
+        extra_kwargs = {
+            'email': {'required': False},
+            'first_name': {'required': False},
+            'username': {'required': False}
+        }
+    
