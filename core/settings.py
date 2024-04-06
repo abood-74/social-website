@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'account',
     'images',
+    'actions'
 ]
 
 MIDDLEWARE = [

@@ -1,9 +1,10 @@
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.urls import reverse
+import pytest
 from images.models import Image
 from account.models import CustomUser
-import pytest
+from actions.models import Action
 
 @pytest.mark.django_db
 class ImageCreateAPIViewTests(APITestCase):
@@ -24,6 +25,7 @@ class ImageCreateAPIViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Image.objects.count(), 1)
         self.assertEqual(Image.objects.get().title, 'Google Logo')
+        self.assertEqual(Action.objects.count(), 1)   
     
     def test_create_image_with_invalid_url(self):
         data = {

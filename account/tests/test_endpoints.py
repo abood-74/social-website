@@ -1,8 +1,10 @@
-from account.models import CustomUser
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.urls import reverse
 import pytest
+from account.models import CustomUser
+from actions.models import Action
+
 
 
 
@@ -65,6 +67,7 @@ class RegisterViewTests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['username'], 'testuser')
+        self.assertEqual(len(Action.objects.all()), 1)
     
     def test_register_with_invalid_data(self):
         
@@ -188,6 +191,7 @@ class FollowUserViewTests(APITestCase):
         assert response.status_code == status.HTTP_200_OK
         assert user.following.count() == 1
         assert user.following.first().username == 'testuser2'
+        assert Action.objects.count() == 1
         
         
         
@@ -206,6 +210,8 @@ class FollowUserViewTests(APITestCase):
         
         assert response.status_code == status.HTTP_200_OK
         assert user.following.count() == 0
+        assert Action.objects.count() == 0
+
         
     def test_follow_user_with_invalid_action(self):
         user2 = CustomUser.objects.create_user(username='testuser2', password='testpassword', email = 'a.ex.com')

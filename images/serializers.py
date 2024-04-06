@@ -20,7 +20,8 @@ class ImageSerializer(serializers.ModelSerializer):
     def validate(self, data):
         url = data['url']
         valid_extensions = ['jpg', 'jpeg', 'png']
-        extension = url.rsplit('.', 1)[1].lower()
+        extension = url.rsplit('.', 1)[1].lower()[:3]
+        print(extension)
         
         if extension not in valid_extensions:
             raise serializers.ValidationError("The given URL does not match valid image extensions.")
@@ -52,7 +53,7 @@ class ImageDetailSerializer(serializers.ModelSerializer):
         if 'url' in data:
             url = data['url']
             valid_extensions = ['jpg', 'jpeg', 'png']
-            extension = url.rsplit('.', 1)[1].lower()
+            extension = url.rsplit('.', 1)[1].lower()[:3]
             
             if extension not in valid_extensions:
                 raise serializers.ValidationError("The given URL does not match valid image extensions.")

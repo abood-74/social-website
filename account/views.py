@@ -10,12 +10,14 @@ from rest_framework.pagination import LimitOffsetPagination
 from .models import CustomUser, Contact
 from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer, UserFollowSerializer,UserDashboardSerializer
 from .services import create_jwt_token_for_google_authnticated_user
+from actions.utils import create_action
 class RegisterView(APIView):
         
         def post(self, request):
             serializer = RegisterSerializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
+                create_action(user, 'has created an account')
                 return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
             
             
@@ -127,6 +129,7 @@ class UserFollowView(APIView):
                 user = CustomUser.objects.get(id=id)
                 if action == 'follow':
                     Contact.objects.get_or_create(user_from=request.user, user_to=user)
+                    create_action(request.user, 'is following', user)
                 else:
                     Contact.objects.filter(user_from=request.user, user_to=user).delete()
                 return Response({'message': 'Action successful'}, status=status.HTTP_200_OK)

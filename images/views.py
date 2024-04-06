@@ -8,7 +8,7 @@ from rest_framework.pagination import LimitOffsetPagination
 #local imports
 from .serializers import ImageSerializer, ImageDetailSerializer, ImageLikeSerializer
 from .models import Image
-
+from actions.utils import create_action
 
 class ImageCreateAPIView(APIView):
     permission_classes = [IsAuthenticated,]
@@ -22,6 +22,7 @@ class ImageCreateAPIView(APIView):
             serializer.validated_data['image'] = image
             serializer.validated_data['user'] = request.user
             serializer.save()
+            create_action(request.user, 'bookmarked image', serializer.instance)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -85,6 +86,7 @@ class ImageLikeAPIView(APIView):
                 image = Image.objects.get(id=id)
                 if serializer.validated_data['action']  == 'like':
                     image.users_like.add(request.user)
+                    create_action(request.user, 'liked image', image)
                 else:
                     image.users_like.remove(request.user)
                 return Response(status=status.HTTP_200_OK)
