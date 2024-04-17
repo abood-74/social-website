@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from .models import CustomUser, Contact
+from actions.models import Action
 class LoginSerializer(serializers.ModelSerializer):
     username = serializers.CharField()
     password = serializers.CharField()
@@ -110,3 +111,9 @@ class UserDashboardSerializer(serializers.ModelSerializer):
             'username': {'required': False}
         }
     
+
+class ActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Action
+        fields = ['user', 'verb']
+        

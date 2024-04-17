@@ -229,4 +229,28 @@ class FollowUserViewTests(APITestCase):
         assert 'message' in response.data
         
 
+class UserDashboardViewTests(APITestCase):
+        
+        def setUp(self):
+            self.client = APIClient()
+        
+        def test_user_dashboard_view(self):
+            user = CustomUser.objects.create_user(username='testuser', password='testpassword', email = 'a.e.com')
+            user2 = CustomUser.objects.create_user(username='testuser2', password='testpassword', email = 'a.ex.com')
+            user.following.add(user2)
+            user2.following.add(user)
+            Action.objects.create(user=user2, verb='follow', target=user)
+            
+            
+            self.client.force_authenticate(user=user)
+            
+            response = self.client.get(reverse("account:dashboard"))
+            
+            assert response.status_code == status.HTTP_200_OK
+            assert response.data[0]['user'] == user2.id
+            assert response.data[0]['verb'] == 'follow'
+            
+           
+        
+
 

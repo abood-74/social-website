@@ -8,9 +8,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import LimitOffsetPagination
 #local imports
 from .models import CustomUser, Contact
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer, UserFollowSerializer,UserDashboardSerializer
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer, UserFollowSerializer,UserDashboardSerializer, ActionSerializer
 from .services import create_jwt_token_for_google_authnticated_user
 from actions.utils import create_action
+from actions.models import Action
+
+
 class RegisterView(APIView):
         
         def post(self, request):
@@ -141,9 +144,19 @@ class UserFollowView(APIView):
    
 class DashBoardView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = LimitOffsetPagination
     
     def get(self, request):
-        return Response({'message': f'Welcome to "{request.user.username}" the dashboard'})
+        actions = Action.objects.exclude(user=request.user)
+        following_ids = request.user.following.values_list('id', flat=True)
+        
+        if following_ids:
+            actions = actions.filter(user_id__in=following_ids)
+        actions = actions.select_related('user', 'user__profile')\
+                                        .prefetch_related('target')
+        paginator = self.pagination_class()
+        paginated_actions = paginator.paginate_queryset(actions, request)
+        return Response(ActionSerializer(paginated_actions, many=True).data, status=status.HTTP_200_OK)
         
         
 
