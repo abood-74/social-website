@@ -1,3 +1,5 @@
+import redis
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -6,9 +8,14 @@ import requests
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import LimitOffsetPagination
 #local imports
-from .serializers import ImageSerializer, ImageDetailSerializer, ImageLikeSerializer
+from .serializers import ImageSerializer, ImageDetailSerializer, ImageLikeSerializer, ImageDetailWithTotalViewsSerializer
 from .models import Image
 from actions.utils import create_action
+from django.conf import settings
+
+r = redis.Redis(host=settings.REDIS_HOST,
+port=settings.REDIS_PORT,
+db=settings.REDIS_DB)
 
 class ImageCreateAPIView(APIView):
     permission_classes = [IsAuthenticated,]
@@ -34,7 +41,9 @@ class ImageDetailAPIView(APIView):
         id = kwargs.get('id')
         try:
             image = Image.objects.get(id=id)
-            return Response(ImageDetailSerializer(image).data, status=status.HTTP_200_OK)
+            image.total_views = r.incr(f'image:{image.id}:views')
+            r.zincrby('image_ranking', 1, image.id)
+            return Response(ImageDetailWithTotalViewsSerializer(image).data, status=status.HTTP_200_OK)
         except Image.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         
@@ -102,6 +111,17 @@ class ImageListAPIView(APIView):
         paginator = self.pagination_class()
         paginated_images = paginator.paginate_queryset(images, request)
         serializer = ImageDetailSerializer(paginated_images, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class ImageRankingAPIView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly,]
+    
+    def get(self, request, *args, **kwargs):
+        image_ranking = r.zrange('image_ranking', 0, -1, desc=True)[:10]
+        image_ranking_ids = [int(id) for id in image_ranking]
+        most_viewed_images = list(Image.objects.filter(id__in=image_ranking_ids))
+        most_viewed_images.sort(key=lambda x: image_ranking_ids.index(x.id))
+        serializer = ImageDetailSerializer(most_viewed_images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     

@@ -36,7 +36,7 @@ class ImageDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Image
-        fields = ['slug', 'url', 'image', 'title', 'description', 'created', 'users_like', 'user']
+        fields = ['id','slug', 'url', 'image', 'title', 'description', 'created', 'users_like', 'user']
         extra_kwargs = {
             'slug': {'required': False},
             'image': {'required': False},
@@ -46,8 +46,10 @@ class ImageDetailSerializer(serializers.ModelSerializer):
             'title': {'required': False},
             'user': {'required': False},
             'url': {'required': False},
+            'id': {'required': False},
             
         }
+        
         
     def validate(self, data):
         if 'url' in data:
@@ -64,6 +66,11 @@ class ImageDetailSerializer(serializers.ModelSerializer):
         else:
             return super().validate(data)
         
+class ImageDetailWithTotalViewsSerializer(ImageDetailSerializer):
+    total_views = serializers.IntegerField()
+    
+    class Meta(ImageDetailSerializer.Meta):
+        fields = ImageDetailSerializer.Meta.fields + ['total_views']
 
 class ImageLikeSerializer(serializers.Serializer):
     id = serializers.IntegerField()
