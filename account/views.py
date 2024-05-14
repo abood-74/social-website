@@ -12,6 +12,7 @@ from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, Ed
 from .services import create_jwt_token_for_google_authnticated_user
 from actions.utils import create_action
 from actions.models import Action
+from .tasks import send_congratulatory_email
 
 
 class RegisterView(APIView):
@@ -21,6 +22,7 @@ class RegisterView(APIView):
             if serializer.is_valid():
                 user = serializer.save()
                 create_action(user, 'has created an account')
+                send_congratulatory_email.delay(UserSerializer(user).data)
                 return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
             
             

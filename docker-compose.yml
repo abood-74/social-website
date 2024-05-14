@@ -4,7 +4,7 @@ services:
   social_api:
     build: ./
     ports:
-      - 80:8000
+      - 8000:8000
 
     env_file:
       - ./.env
@@ -44,7 +44,53 @@ services:
     image: redis:7.2.0
     networks:
       - app-net
+  
+  celery_worker:
+    build: ./
+    
+    env_file:
+      - ./.env
+    
+    command: >
+      sh -c "
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput --clear &&
+        celery -A core worker -l info
+        "
+    networks:
+      - app-net
+    volumes:
+      - ./:/home/
 
+    depends_on:
+      - social_db
+      - redis
+      - social_api
+  
+  
+  celery_beat:
+    build: ./
+    
+    env_file:
+      - ./.env
+    
+    command: >
+      sh -c "
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput --clear &&
+        celery -A core beat -l info
+        "
+    networks:
+      - app-net
+    volumes:
+      - ./:/home/
+
+    depends_on:
+      - social_db
+      - redis
+      - social_api
 
 networks:
   app-net:
