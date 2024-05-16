@@ -6,9 +6,10 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import LimitOffsetPagination
+from drf_yasg.utils import swagger_auto_schema
 #local imports
 from .models import CustomUser, Contact
-from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer, UserFollowSerializer,UserDashboardSerializer, ActionSerializer
+from .serializers import LoginSerializer, RegisterSerializer, UserSerializer, EditUserSerializer, AuthSerializer, UserFollowSerializer,UserDashboardSerializer, ActionSerializer, TokenSerializer, MessageSerializer, PasswordChangeSerializer
 from .services import create_jwt_token_for_google_authnticated_user
 from actions.utils import create_action
 from actions.models import Action
@@ -17,6 +18,7 @@ from .tasks import send_congratulatory_email
 
 class RegisterView(APIView):
         
+        @swagger_auto_schema(request_body=RegisterSerializer, responses={200: UserSerializer})
         def post(self, request):
             serializer = RegisterSerializer(data=request.data)
             if serializer.is_valid():
@@ -32,6 +34,7 @@ class LoginView(APIView):
     authentication_classes = []
     permission_classes = []
     
+    @swagger_auto_schema(request_body=LoginSerializer, responses={200: TokenSerializer})
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -55,27 +58,29 @@ class LoginView(APIView):
 class PasswordChangeView(APIView): 
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(request_body=PasswordChangeSerializer, responses={200: MessageSerializer})
     def post(self, request):
-        if request.user.is_authenticated:
             
-            try:
-                validate_password(request.data['password'])
-                request.user.set_password(request.data['password'])
-                request.user.save()
-                return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
-            
-            except Exception as e:
-                return Response({'message': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+        try: 
+            validate_password(request.data['password'])
+            request.user.set_password(request.data['password'])
+            request.user.save()
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({'message': e.messages}, status=status.HTTP_400_BAD_REQUEST)
             
         
 
 class UserEditView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(responses={200: UserSerializer})
     def get(self, request):
         return Response({'username':request.user.username, 'email': request.user.email, 'first_name': request.user.first_name})
     
     
+    @swagger_auto_schema(request_body=UserSerializer, responses={200: MessageSerializer})
     def put(self, request):
         serializer = UserSerializer(instance=request.user,data=request.data)
         if serializer.is_valid():     
@@ -83,7 +88,8 @@ class UserEditView(APIView):
             return Response({'message': 'User updated successfully'}, status=status.HTTP_201_CREATED) 
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    @swagger_auto_schema(request_body=EditUserSerializer, responses={200: MessageSerializer})
     def patch(self, request):
         serializer = EditUserSerializer(instance=request.user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -97,6 +103,7 @@ class UserListView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = LimitOffsetPagination
     
+    @swagger_auto_schema(responses={200: UserSerializer})
     def get(self, request):
         qs = CustomUser.objects.all()
         paginator = self.pagination_class()
@@ -106,6 +113,7 @@ class UserListView(APIView):
 class UserDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(responses={200: UserDashboardSerializer})
     def get(self, request):
         try:
             id = request.user.id
@@ -113,7 +121,8 @@ class UserDetailView(APIView):
             return Response(UserDashboardSerializer(user).data, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'message': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
-        
+   
+    @swagger_auto_schema(responses={204: MessageSerializer})
     def delete(self, request, id):
         try:
             user = CustomUser.objects.get(id=id)
@@ -125,6 +134,7 @@ class UserDetailView(APIView):
 class UserFollowView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @swagger_auto_schema(request_body=UserFollowSerializer, responses={200: MessageSerializer})
     def post(self, request):
         serializer = UserFollowSerializer(data=request.data)
         if serializer.is_valid():
@@ -148,6 +158,7 @@ class DashBoardView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = LimitOffsetPagination
     
+    @swagger_auto_schema(responses={200: ActionSerializer})
     def get(self, request):
         actions = Action.objects.exclude(user=request.user)
         following_ids = request.user.following.values_list('id', flat=True)
@@ -163,7 +174,7 @@ class DashBoardView(APIView):
         
 
 class GoogleLoginView(APIView):
-    
+    @swagger_auto_schema(responses={200: TokenSerializer})
     def get(self, request, *args, **kwargs):
         
         Auth_data = AuthSerializer(data=request.GET)

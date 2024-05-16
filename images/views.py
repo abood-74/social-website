@@ -7,6 +7,7 @@ from django.core.files.base import ContentFile
 import requests
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import LimitOffsetPagination
+from drf_yasg.utils import swagger_auto_schema
 #local imports
 from .serializers import ImageSerializer, ImageDetailSerializer, ImageLikeSerializer, ImageDetailWithTotalViewsSerializer
 from .models import Image
@@ -20,6 +21,7 @@ db=settings.REDIS_DB)
 class ImageCreateAPIView(APIView):
     permission_classes = [IsAuthenticated,]
     
+    @swagger_auto_schema(request_body=ImageSerializer, responses={201: ImageSerializer})
     def post(self, request, *args, **kwargs):
         serializer = ImageSerializer(data=request.data)
         if serializer.is_valid():
@@ -37,6 +39,7 @@ class ImageCreateAPIView(APIView):
 class ImageDetailAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly,]
     
+    @swagger_auto_schema(responses={200: ImageDetailWithTotalViewsSerializer})
     def get(self, request, *args, **kwargs):
         id = kwargs.get('id')
         try:
@@ -48,6 +51,7 @@ class ImageDetailAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         
     
+    @swagger_auto_schema(request_body=ImageDetailSerializer, responses={200: ImageDetailSerializer})
     def put(self, request, *args, **kwargs):
         id = kwargs.get('id')
         try:
@@ -60,7 +64,7 @@ class ImageDetailAPIView(APIView):
         except Image.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    
+    @swagger_auto_schema(request_body=ImageDetailSerializer, responses={200: ImageDetailSerializer})
     def patch(self, request, *args, **kwargs):
         id = kwargs.get('id')
         try:
@@ -73,6 +77,7 @@ class ImageDetailAPIView(APIView):
         except Image.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
     
+    @swagger_auto_schema(responses={204: 'No Content'})
     def delete(self, request, *args, **kwargs):
         id = kwargs.get('id')
         try:
@@ -86,6 +91,7 @@ class ImageDetailAPIView(APIView):
 class ImageLikeAPIView(APIView):
     permission_classes = [IsAuthenticated,]
     
+    @swagger_auto_schema(request_body=ImageLikeSerializer, responses={200: 'OK'})
     def post(self, request, *args, **kwargs):
         serializer = ImageLikeSerializer(data=request.data)
         if serializer.is_valid():
@@ -106,6 +112,8 @@ class ImageLikeAPIView(APIView):
 class ImageListAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly,]
     pagination_class = LimitOffsetPagination
+    
+    @swagger_auto_schema(responses={200: ImageDetailSerializer})
     def get(self, request, *args, **kwargs):
         images = Image.objects.all()
         paginator = self.pagination_class()
@@ -116,6 +124,7 @@ class ImageListAPIView(APIView):
 class ImageRankingAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly,]
     
+    @swagger_auto_schema(responses={200: ImageDetailSerializer})
     def get(self, request, *args, **kwargs):
         image_ranking = r.zrange('image_ranking', 0, -1, desc=True)[:10]
         image_ranking_ids = [int(id) for id in image_ranking]

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'django_celery_results',
     'django_celery_beat',
+    'drf_yasg',
     'account',
     'images',
     'actions'
@@ -198,7 +199,7 @@ CELERY_BROKER_CONNECTION_MAX_RETRIES = 5
 CELERY_BEAT_SCHEDULE = {
     'send_inactive_users_emails': {
         'task': 'account.tasks.send_inactive_users_email',
-        'schedule': timedelta(days=1),  # Run every 24 hours
+        'schedule': timedelta(days=30),  # Run every 30 days
     },
 }
 

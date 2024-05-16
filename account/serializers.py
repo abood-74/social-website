@@ -117,3 +117,23 @@ class ActionSerializer(serializers.ModelSerializer):
         model = Action
         fields = ['user', 'verb']
         
+
+class TokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField()
+    
+    class Meta:
+        fields = ['refresh', 'access']
+
+class MessageSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    
+    class Meta:
+        fields = ['message']
+
+class PasswordChangeSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    
+    class Meta:
+        fields = ['password']
+        
